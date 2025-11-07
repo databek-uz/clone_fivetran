@@ -1,0 +1,1 @@
+- Airflow schedule va h.k shu yerdan boshqariladi.

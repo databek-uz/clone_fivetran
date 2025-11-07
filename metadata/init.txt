@@ -1,0 +1,1 @@
+- Yaml configlar va MySQL da data saqlash metadata management shu yerdan bo'ladi role permissionlar ham.

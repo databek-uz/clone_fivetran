@@ -1,0 +1,1 @@
+- Jarayon testlash uchun testlar shuyerda yoziladi.

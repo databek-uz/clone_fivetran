@@ -1,1 +1,0 @@
-- Bu asosiy core qismi, pyspark notebook va configlar yoziladigon joy bo'ladi.

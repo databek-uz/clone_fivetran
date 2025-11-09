@@ -99,9 +99,12 @@ pipezone/
 
 ### Prerequisites
 
-- Docker & Docker Compose
-- At least 8GB RAM available
+- **Linux/Mac**: Docker & Docker Compose
+- **Windows**: Docker Desktop for Windows (see [WINDOWS_SETUP.md](WINDOWS_SETUP.md))
+- At least 8GB RAM available for Docker
 - Ports available: 3306, 8080, 8888, 9000, 9001, 8200, 7077, 8081, 8082
+
+> 💡 **Windows Users**: Please refer to [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for Windows-specific setup instructions using PowerShell or CMD scripts.
 
 ### 1. Clone the Repository
 
@@ -154,9 +157,22 @@ POSTGRES_SOURCE_PASSWORD=your_password
 
 ### 3. Start All Services
 
+**Linux/Mac:**
 ```bash
 bash setup/scripts/start-all.sh
 ```
+
+**Windows PowerShell:**
+```powershell
+.\setup\scripts\start-all.ps1
+```
+
+**Windows CMD:**
+```cmd
+setup\scripts\start-all.bat
+```
+
+> 💡 **Windows Users**: See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed Windows instructions.
 
 This will start:
 - ✅ MySQL (metadata storage)

@@ -1,0 +1,41 @@
+# ==============================================
+# MinIO RAW Layer Connection
+# ==============================================
+
+name: minio_raw
+type: minio
+description: MinIO object storage for raw data layer
+
+# Connection parameters (use Vault for secrets in production)
+connection:
+  endpoint: ${MINIO_HOST}:${MINIO_PORT}
+  access_key: ${MINIO_ROOT_USER}
+  secret_key: ${MINIO_ROOT_PASSWORD}
+  secure: false
+  bucket: ${MINIO_BUCKET_RAW}
+
+# Optional: Vault integration for secrets
+vault:
+  enabled: true
+  path: secret/data/minio/raw
+  keys:
+    access_key: access_key
+    secret_key: secret_key
+
+# Connection settings
+settings:
+  region: us-east-1
+  signature_version: s3v4
+  max_connections: 50
+  connect_timeout: 30
+  read_timeout: 60
+
+# Metadata
+metadata:
+  layer: raw
+  environment: development
+  owner: data_engineering
+  tags:
+    - raw
+    - object-storage
+    - minio

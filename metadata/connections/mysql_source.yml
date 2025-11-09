@@ -1,0 +1,45 @@
+# ==============================================
+# MySQL Source Connection
+# ==============================================
+
+name: mysql_source
+type: mysql
+description: MySQL source database for data extraction
+
+connection:
+  host: ${MYSQL_SOURCE_HOST}
+  port: ${MYSQL_SOURCE_PORT:-3306}
+  database: ${MYSQL_SOURCE_DATABASE}
+  username: ${MYSQL_SOURCE_USER}
+  password: ${MYSQL_SOURCE_PASSWORD}
+  charset: utf8mb4
+
+pool:
+  min_size: 1
+  max_size: 10
+  timeout: 30
+
+ssl:
+  enabled: false
+  ca_path: null
+  cert_path: null
+  key_path: null
+
+vault:
+  enabled: true
+  path: secret/data/mysql/source
+  keys:
+    username: username
+    password: password
+
+query:
+  fetch_size: 10000
+  timeout: 300
+
+metadata:
+  environment: development
+  owner: data_engineering
+  tags:
+    - mysql
+    - source
+    - oltp

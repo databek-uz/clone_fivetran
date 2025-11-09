@@ -1,1 +1,0 @@
-- Docker & Kubernets boshqarish va boshqa shell scriptlar shuyerda saqlanadi.

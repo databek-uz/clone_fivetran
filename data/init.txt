@@ -1,1 +1,0 @@
-- Docker uchun datalar saqlanadigon qismi.

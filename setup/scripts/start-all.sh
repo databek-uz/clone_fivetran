@@ -24,6 +24,11 @@ fi
 
 cd "${DOCKER_DIR}"
 
+# Create Docker network if it doesn't exist
+echo ""
+echo "Creating Docker network..."
+docker network create pipezone_network 2>/dev/null || true
+
 # Step 1: Start Infrastructure Services
 echo ""
 echo "📦 Step 1: Starting Infrastructure Services (MySQL, MinIO, Vault)..."

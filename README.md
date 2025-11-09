@@ -592,37 +592,34 @@ docker exec -it pipezone_mysql mysql -u root -p
 
 ## 🔧 Troubleshooting
 
-### Services won't start
+For detailed troubleshooting guide, see **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**.
 
+### Quick Fixes
+
+**Services won't start:**
 ```bash
-# Check Docker resources
-docker system df
-
-# Clean up
-docker system prune -a
-
-# Restart Docker daemon
-sudo systemctl restart docker
+docker ps -a                    # Check container status
+docker logs <container_name>    # Check logs
+docker restart <container_name> # Restart service
 ```
 
-### Airflow DAGs not appearing
-
+**Airflow DAGs not appearing:**
 ```bash
-# Check logs
-docker-compose -f setup/docker/docker-compose.airflow.yml logs -f airflow-scheduler
-
-# Verify metadata path is mounted
-docker exec pipezone_airflow_scheduler ls -la /opt/pipezone/metadata/flows
+docker logs pipezone_airflow_scheduler -f
+docker exec pipezone_airflow_scheduler airflow dags reserialize
 ```
 
-### Spark connection issues
+**Windows errors:**
+- Use PowerShell or CMD scripts instead of bash
+- Run as Administrator
+- See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) and [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
 
+**Full reset (deletes all data):**
 ```bash
-# Check Spark master is running
-curl http://localhost:8081
-
-# Verify network
-docker network inspect pipezone_network
+bash setup/scripts/stop-all.sh
+docker-compose -f setup/docker/docker-compose.infra.yml down -v
+docker network rm pipezone_network
+bash setup/scripts/start-all.sh
 ```
 
 ## 🤝 Contributing

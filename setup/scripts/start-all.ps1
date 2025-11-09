@@ -28,6 +28,14 @@ if (Test-Path (Join-Path $ProjectRoot ".env")) {
 
 Set-Location $DockerDir
 
+# Create Docker network if it doesn't exist
+Write-Host ""
+Write-Host "Creating Docker network..." -ForegroundColor Cyan
+docker network create pipezone_network 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Network already exists or created successfully" -ForegroundColor Gray
+}
+
 # Step 1: Start Infrastructure Services
 Write-Host ""
 Write-Host "📦 Step 1: Starting Infrastructure Services (MySQL, MinIO, Vault)..." -ForegroundColor Cyan

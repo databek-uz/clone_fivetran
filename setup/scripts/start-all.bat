@@ -36,6 +36,14 @@ for /f "usebackq tokens=*" %%a in ("%PROJECT_ROOT%\.env") do (
 
 cd /d "%DOCKER_DIR%"
 
+REM Create Docker network if it doesn't exist
+echo.
+echo Creating Docker network...
+docker network create pipezone_network 2>nul
+if errorlevel 1 (
+    echo Network already exists or created successfully
+)
+
 REM Step 1: Start Infrastructure
 echo.
 echo [1/3] Starting Infrastructure Services (MySQL, MinIO, Vault)...

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # ==============================================
 # PIPEZONE - Jupyter Notebook + Spark
 # With Multiple Database Drivers

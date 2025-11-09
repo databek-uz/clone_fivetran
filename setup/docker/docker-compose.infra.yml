@@ -1,5 +1,3 @@
-version: '3.8'
-
 # ==============================================
 # PIPEZONE - Infrastructure Services
 # MySQL, MinIO, Vault

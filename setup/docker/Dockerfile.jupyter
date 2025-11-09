@@ -2,7 +2,7 @@
 # PIPEZONE - Jupyter Notebook with PySpark + Database Drivers
 # ==============================================
 
-ARG SPARK_VERSION=3.5.0
+ARG SPARK_VERSION=3.4
 FROM jupyter/pyspark-notebook:latest
 
 USER root

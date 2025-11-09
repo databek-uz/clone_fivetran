@@ -112,15 +112,45 @@ cd pipezone
 
 ### 2. Configure Environment
 
-The `.env` file is already configured with default values. Review and update as needed:
+Copy the example environment file and configure your credentials:
 
 ```bash
-# Review the .env file
-cat .env
+# Copy the example file
+cp .env.example .env
 
-# Update credentials if needed
+# Edit with your credentials
 nano .env
 ```
+
+**Important configurations to update:**
+
+```bash
+# MySQL passwords
+MYSQL_ROOT_PASSWORD=your_secure_password_here
+MYSQL_PASSWORD=your_secure_password_here
+
+# MinIO credentials
+MINIO_ROOT_USER=your_admin_username
+MINIO_ROOT_PASSWORD=your_secure_password_here
+
+# Airflow admin password
+AIRFLOW_ADMIN_PASSWORD=your_admin_password
+AIRFLOW_DATABASE_PASSWORD=your_db_password
+
+# Jupyter token
+JUPYTER_TOKEN=your_jupyter_token
+
+# Vault token
+VAULT_TOKEN=your_vault_token
+
+# Add your external database connections
+POSTGRES_SOURCE_HOST=your-postgres-host.com
+POSTGRES_SOURCE_DATABASE=your_database
+POSTGRES_SOURCE_USER=your_username
+POSTGRES_SOURCE_PASSWORD=your_password
+```
+
+💡 **Tip**: The `.env.example` file contains examples for all supported data sources (PostgreSQL, MySQL, MongoDB, SQL Server, Oracle, Snowflake, etc.). Uncomment and configure the ones you need.
 
 ### 3. Start All Services
 

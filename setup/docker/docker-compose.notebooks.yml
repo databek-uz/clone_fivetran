@@ -1,0 +1,138 @@
+version: '3.8'
+
+# ==============================================
+# PIPEZONE - Jupyter Notebook + Spark
+# With Multiple Database Drivers
+# ==============================================
+
+services:
+  # -----------------
+  # Spark Master
+  # -----------------
+  spark-master:
+    image: bitnami/spark:${SPARK_VERSION}
+    container_name: pipezone_spark_master
+    restart: unless-stopped
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+      - TZ=${TZ}
+    ports:
+      - "${SPARK_MASTER_PORT}:7077"
+      - "${SPARK_MASTER_WEBUI_PORT}:8080"
+    volumes:
+      - ../../core:/opt/pipezone/core
+      - ../../metadata:/opt/pipezone/metadata:ro
+      - ../../data:/opt/pipezone/data
+    networks:
+      - pipezone_network
+
+  # -----------------
+  # Spark Worker
+  # -----------------
+  spark-worker:
+    image: bitnami/spark:${SPARK_VERSION}
+    container_name: pipezone_spark_worker
+    restart: unless-stopped
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+      - TZ=${TZ}
+    ports:
+      - "${SPARK_WORKER_WEBUI_PORT}:8081"
+    volumes:
+      - ../../core:/opt/pipezone/core
+      - ../../metadata:/opt/pipezone/metadata:ro
+      - ../../data:/opt/pipezone/data
+    depends_on:
+      - spark-master
+    networks:
+      - pipezone_network
+
+  # -----------------
+  # Jupyter Notebook with PySpark + Drivers
+  # -----------------
+  jupyter:
+    build:
+      context: .
+      dockerfile: Dockerfile.jupyter
+      args:
+        SPARK_VERSION: ${SPARK_VERSION}
+    container_name: pipezone_jupyter
+    restart: unless-stopped
+    environment:
+      JUPYTER_ENABLE_LAB: ${JUPYTER_ENABLE_LAB}
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN}
+      GRANT_SUDO: ${GRANT_SUDO}
+      NB_USER: ${NB_USER}
+      NB_UID: ${NB_UID}
+      NB_GID: ${NB_GID}
+      CHOWN_HOME: "yes"
+      CHOWN_HOME_OPTS: "-R"
+
+      # Spark configuration
+      SPARK_MASTER: ${SPARK_MASTER}
+      SPARK_DRIVER_MEMORY: ${SPARK_DRIVER_MEMORY}
+      SPARK_EXECUTOR_MEMORY: ${SPARK_EXECUTOR_MEMORY}
+
+      # Database connections from .env
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_PORT: ${MYSQL_PORT}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+      # MinIO
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_HOST: ${MINIO_HOST}
+      MINIO_PORT: ${MINIO_PORT}
+
+      # Vault
+      VAULT_ADDR: ${VAULT_ADDR}
+      VAULT_TOKEN: ${VAULT_TOKEN}
+
+      # Metadata paths
+      METADATA_PATH: ${METADATA_PATH}
+      CONNECTIONS_PATH: ${CONNECTIONS_PATH}
+      FLOWS_PATH: ${FLOWS_PATH}
+      SCHEMAS_PATH: ${SCHEMAS_PATH}
+
+      # Timezone
+      TZ: ${TZ}
+
+    ports:
+      - "${JUPYTER_PORT}:8888"
+    volumes:
+      - ../../core/notebooks:/home/${NB_USER}/notebooks
+      - ../../core/jobs:/home/${NB_USER}/jobs
+      - ../../core/transformations:/home/${NB_USER}/transformations
+      - ../../core/utils:/home/${NB_USER}/utils
+      - ../../core/drivers:/home/${NB_USER}/drivers
+      - ../../metadata:/opt/pipezone/metadata:ro
+      - ../../data:/opt/pipezone/data
+      - ../../data/notebooks:/home/${NB_USER}/.local
+    user: root
+    working_dir: /home/${NB_USER}
+    command: start-notebook.sh --NotebookApp.token='${JUPYTER_TOKEN}' --NotebookApp.password=''
+    depends_on:
+      - spark-master
+      - spark-worker
+    networks:
+      - pipezone_network
+
+networks:
+  pipezone_network:
+    external: true
+    name: ${NETWORK_NAME}

@@ -1,0 +1,112 @@
+# ==============================================
+# Flow: PostgreSQL Users Table to MinIO Raw
+# ==============================================
+
+name: postgres_users_to_raw
+description: Extract users table from PostgreSQL to MinIO raw layer with incremental sync
+
+# Source configuration
+source:
+  connection: postgres_source
+  type: table
+
+  # Table configuration
+  table:
+    schema: public
+    name: users
+
+  # Column selection (null means all columns)
+  columns: null
+
+  # Optional: Custom query (overrides table if provided)
+  # query: "SELECT * FROM public.users WHERE deleted_at IS NULL"
+
+  # Incremental configuration
+  incremental:
+    enabled: true
+    column: updated_at
+    strategy: max_value
+
+    # Optional: Initial load filter
+    initial_load:
+      enabled: true
+      query: "SELECT * FROM public.users WHERE created_at >= '2024-01-01'"
+
+# Target configuration
+target:
+  connection: minio_raw
+  type: object_storage
+
+  # Output configuration
+  path: postgres/users/
+  format: parquet
+  partition_by:
+    - year
+    - month
+    - day
+
+  # Write mode: append, overwrite, merge
+  write_mode: append
+
+  # Compression
+  compression: snappy
+
+  # File naming
+  file_naming:
+    pattern: "users_{execution_date}_{partition}.parquet"
+    max_records_per_file: 1000000
+
+# Data quality checks
+data_quality:
+  enabled: true
+  checks:
+    - name: row_count
+      type: not_null
+      threshold: 0
+
+    - name: unique_id
+      type: unique
+      columns:
+        - id
+
+    - name: email_format
+      type: regex
+      column: email
+      pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+
+    - name: updated_at_not_null
+      type: not_null
+      column: updated_at
+
+# Transformation (optional)
+transformation:
+  enabled: false
+  type: pyspark
+  script: null
+
+# Schedule
+schedule:
+  enabled: true
+  cron: "0 */6 * * *"  # Every 6 hours
+  timezone: Asia/Tashkent
+
+# Notifications
+notifications:
+  on_success:
+    enabled: false
+  on_failure:
+    enabled: true
+    channels:
+      - type: log
+        level: error
+
+# Metadata
+metadata:
+  owner: data_engineering
+  sla: 6h
+  priority: high
+  tags:
+    - postgres
+    - users
+    - incremental
+    - raw

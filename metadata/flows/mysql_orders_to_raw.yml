@@ -1,0 +1,84 @@
+# ==============================================
+# Flow: MySQL Orders Table to MinIO Raw (Full Sync)
+# ==============================================
+
+name: mysql_orders_to_raw
+description: Full sync of orders table from MySQL to MinIO raw layer
+
+source:
+  connection: mysql_source
+  type: table
+
+  table:
+    schema: ecommerce
+    name: orders
+
+  columns:
+    - order_id
+    - customer_id
+    - order_date
+    - total_amount
+    - status
+    - created_at
+    - updated_at
+
+  # Full sync - no incremental
+  incremental:
+    enabled: false
+
+target:
+  connection: minio_raw
+  type: object_storage
+
+  path: mysql/orders/
+  format: parquet
+  partition_by:
+    - status
+    - year
+    - month
+
+  write_mode: overwrite  # Full refresh
+  compression: snappy
+
+  file_naming:
+    pattern: "orders_{execution_date}.parquet"
+    max_records_per_file: 500000
+
+data_quality:
+  enabled: true
+  checks:
+    - name: order_id_unique
+      type: unique
+      columns:
+        - order_id
+
+    - name: total_amount_positive
+      type: range
+      column: total_amount
+      min: 0
+      max: 1000000
+
+    - name: status_valid
+      type: allowed_values
+      column: status
+      values:
+        - pending
+        - processing
+        - completed
+        - cancelled
+        - refunded
+
+schedule:
+  enabled: true
+  cron: "0 2 * * *"  # Daily at 2 AM
+  timezone: Asia/Tashkent
+
+metadata:
+  owner: data_engineering
+  sla: 24h
+  priority: medium
+  tags:
+    - mysql
+    - orders
+    - full-sync
+    - raw

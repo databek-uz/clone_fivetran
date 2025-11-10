@@ -84,12 +84,12 @@ docker-compose -f docker-compose.airflow.yml up -d
 Write-Host "⏳ Waiting for Airflow to initialize..." -ForegroundColor Yellow
 Start-Sleep -Seconds 20
 
-# Step 3: Start Jupyter + Spark
+# Step 3: Start Spark Cluster
 Write-Host ""
-Write-Host "📓 Step 3: Starting Jupyter Notebook + Spark..." -ForegroundColor Cyan
-docker-compose -f docker-compose.notebooks.yml up -d
+Write-Host "⚡ Step 3: Starting Spark Cluster..." -ForegroundColor Cyan
+docker-compose -f docker-compose.spark.yml up -d
 
-Write-Host "⏳ Waiting for services to start..." -ForegroundColor Yellow
+Write-Host "⏳ Waiting for Spark to start..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
 Write-Host ""
@@ -100,18 +100,16 @@ Write-Host "📊 Access URLs:" -ForegroundColor Cyan
 Write-Host "   • Airflow UI:        http://localhost:$env:AIRFLOW_WEBSERVER_PORT" -ForegroundColor White
 Write-Host "   • MinIO Console:     http://localhost:$env:MINIO_CONSOLE_PORT" -ForegroundColor White
 Write-Host "   • Vault UI:          http://localhost:8200" -ForegroundColor White
-Write-Host "   • Jupyter Notebook:  http://localhost:$env:JUPYTER_PORT" -ForegroundColor White
 Write-Host "   • Spark Master UI:   http://localhost:$env:SPARK_MASTER_WEBUI_PORT" -ForegroundColor White
 Write-Host "   • Spark Worker UI:   http://localhost:$env:SPARK_WORKER_WEBUI_PORT" -ForegroundColor White
 Write-Host ""
 Write-Host "🔐 Credentials:" -ForegroundColor Cyan
 Write-Host "   • Airflow:   username=$env:AIRFLOW_ADMIN_USERNAME, password=$env:AIRFLOW_ADMIN_PASSWORD" -ForegroundColor White
 Write-Host "   • MinIO:     username=$env:MINIO_ROOT_USER, password=$env:MINIO_ROOT_PASSWORD" -ForegroundColor White
-Write-Host "   • Jupyter:   token=$env:JUPYTER_TOKEN" -ForegroundColor White
 Write-Host "   • Vault:     token=$env:VAULT_TOKEN" -ForegroundColor White
 Write-Host ""
 Write-Host "📝 Check logs:" -ForegroundColor Cyan
 Write-Host "   docker-compose -f setup\docker\docker-compose.infra.yml logs -f" -ForegroundColor Gray
 Write-Host "   docker-compose -f setup\docker\docker-compose.airflow.yml logs -f" -ForegroundColor Gray
-Write-Host "   docker-compose -f setup\docker\docker-compose.notebooks.yml logs -f" -ForegroundColor Gray
+Write-Host "   docker-compose -f setup\docker\docker-compose.spark.yml logs -f" -ForegroundColor Gray
 Write-Host ""

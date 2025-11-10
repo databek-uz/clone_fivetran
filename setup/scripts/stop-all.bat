@@ -16,8 +16,8 @@ set DOCKER_DIR=%PROJECT_ROOT%\setup\docker
 
 cd /d "%DOCKER_DIR%"
 
-echo Stopping Jupyter + Spark...
-docker-compose -f docker-compose.notebooks.yml down
+echo Stopping Spark Cluster...
+docker-compose -f docker-compose.spark.yml down
 
 echo Stopping Airflow...
 docker-compose -f docker-compose.airflow.yml down

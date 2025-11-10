@@ -61,12 +61,12 @@ docker-compose -f docker-compose.airflow.yml up -d
 echo "⏳ Waiting for Airflow to initialize..."
 sleep 20
 
-# Step 3: Start Jupyter + Spark
+# Step 3: Start Spark Cluster
 echo ""
-echo "📓 Step 3: Starting Jupyter Notebook + Spark..."
-docker-compose -f docker-compose.notebooks.yml up -d
+echo "⚡ Step 3: Starting Spark Cluster..."
+docker-compose -f docker-compose.spark.yml up -d
 
-echo "⏳ Waiting for services to start..."
+echo "⏳ Waiting for Spark to start..."
 sleep 10
 
 echo ""
@@ -77,18 +77,16 @@ echo "📊 Access URLs:"
 echo "   • Airflow UI:        http://localhost:${AIRFLOW_WEBSERVER_PORT}"
 echo "   • MinIO Console:     http://localhost:${MINIO_CONSOLE_PORT}"
 echo "   • Vault UI:          http://localhost:8200"
-echo "   • Jupyter Notebook:  http://localhost:${JUPYTER_PORT}"
 echo "   • Spark Master UI:   http://localhost:${SPARK_MASTER_WEBUI_PORT}"
 echo "   • Spark Worker UI:   http://localhost:${SPARK_WORKER_WEBUI_PORT}"
 echo ""
 echo "🔐 Credentials:"
 echo "   • Airflow:   username=${AIRFLOW_ADMIN_USERNAME}, password=${AIRFLOW_ADMIN_PASSWORD}"
 echo "   • MinIO:     username=${MINIO_ROOT_USER}, password=${MINIO_ROOT_PASSWORD}"
-echo "   • Jupyter:   token=${JUPYTER_TOKEN}"
 echo "   • Vault:     token=${VAULT_TOKEN}"
 echo ""
 echo "📝 Check logs:"
 echo "   docker-compose -f setup/docker/docker-compose.infra.yml logs -f"
 echo "   docker-compose -f setup/docker/docker-compose.airflow.yml logs -f"
-echo "   docker-compose -f setup/docker/docker-compose.notebooks.yml logs -f"
+echo "   docker-compose -f setup/docker/docker-compose.spark.yml logs -f"
 echo ""

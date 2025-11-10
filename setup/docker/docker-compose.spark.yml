@@ -1,0 +1,64 @@
+# ==============================================
+# PIPEZONE - Spark Cluster
+# Standalone Spark for Airflow jobs
+# ==============================================
+
+services:
+  # -----------------
+  # Spark Master
+  # -----------------
+  spark-master:
+    image: bitnami/spark:${SPARK_VERSION}
+    container_name: pipezone_spark_master
+    restart: unless-stopped
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+      - TZ=${TZ}
+    ports:
+      - "${SPARK_MASTER_PORT}:7077"
+      - "${SPARK_MASTER_WEBUI_PORT}:8080"
+    volumes:
+      - ../../core:/opt/pipezone/core
+      - ../../metadata:/opt/pipezone/metadata:ro
+      - ../../data:/opt/pipezone/data
+    networks:
+      - pipezone_network
+
+  # -----------------
+  # Spark Worker
+  # -----------------
+  spark-worker:
+    image: bitnami/spark:${SPARK_VERSION}
+    container_name: pipezone_spark_worker
+    restart: unless-stopped
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=${SPARK_WORKER_MEMORY}
+      - SPARK_WORKER_CORES=${SPARK_WORKER_CORES}
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+      - SPARK_USER=spark
+      - TZ=${TZ}
+    ports:
+      - "${SPARK_WORKER_WEBUI_PORT}:8081"
+    volumes:
+      - ../../core:/opt/pipezone/core
+      - ../../metadata:/opt/pipezone/metadata:ro
+      - ../../data:/opt/pipezone/data
+    depends_on:
+      - spark-master
+    networks:
+      - pipezone_network
+
+networks:
+  pipezone_network:
+    external: true
+    name: ${NETWORK_NAME}

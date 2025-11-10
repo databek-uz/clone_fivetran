@@ -70,12 +70,12 @@ if errorlevel 1 (
 echo Waiting for Airflow to initialize...
 timeout /t 20 /nobreak >nul
 
-REM Step 3: Start Jupyter + Spark
+REM Step 3: Start Spark Cluster
 echo.
-echo [3/3] Starting Jupyter Notebook + Spark...
-docker-compose -f docker-compose.notebooks.yml up -d
+echo [3/3] Starting Spark Cluster...
+docker-compose -f docker-compose.spark.yml up -d
 if errorlevel 1 (
-    echo [ERROR] Failed to start Jupyter and Spark services
+    echo [ERROR] Failed to start Spark services
     pause
     exit /b 1
 )
@@ -91,13 +91,12 @@ echo Access URLs:
 echo   - Airflow UI:        http://localhost:%AIRFLOW_WEBSERVER_PORT%
 echo   - MinIO Console:     http://localhost:%MINIO_CONSOLE_PORT%
 echo   - Vault UI:          http://localhost:8200
-echo   - Jupyter Notebook:  http://localhost:%JUPYTER_PORT%
 echo   - Spark Master UI:   http://localhost:%SPARK_MASTER_WEBUI_PORT%
+echo   - Spark Worker UI:   http://localhost:%SPARK_WORKER_WEBUI_PORT%
 echo.
 echo Credentials:
 echo   - Airflow:  %AIRFLOW_ADMIN_USERNAME% / %AIRFLOW_ADMIN_PASSWORD%
 echo   - MinIO:    %MINIO_ROOT_USER% / %MINIO_ROOT_PASSWORD%
-echo   - Jupyter:  token=%JUPYTER_TOKEN%
 echo.
 echo Press any key to exit...
 pause >nul

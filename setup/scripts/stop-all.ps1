@@ -11,8 +11,8 @@ $DockerDir = Join-Path $ProjectRoot "setup\docker"
 
 Set-Location $DockerDir
 
-Write-Host "📓 Stopping Jupyter + Spark..." -ForegroundColor Gray
-docker-compose -f docker-compose.notebooks.yml down
+Write-Host "⚡ Stopping Spark Cluster..." -ForegroundColor Gray
+docker-compose -f docker-compose.spark.yml down
 
 Write-Host "✈️  Stopping Airflow..." -ForegroundColor Gray
 docker-compose -f docker-compose.airflow.yml down

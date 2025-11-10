@@ -1,9 +1,12 @@
 # ==============================================
-# PIPEZONE - Airflow Orchestration
+# PIPEZONE - Airflow Orchestration with PySpark
 # ==============================================
 
 x-airflow-common: &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME}
+  build:
+    context: .
+    dockerfile: Dockerfile.airflow
+  image: pipezone/airflow-spark:latest
   environment: &airflow-common-env
     AIRFLOW__CORE__EXECUTOR: ${AIRFLOW_CORE_EXECUTOR}
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
@@ -44,6 +47,9 @@ x-airflow-common: &airflow-common
     # Timezone
     TZ: ${TZ}
 
+    # Java for PySpark
+    JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+
   volumes:
     - ../../schedule/airflow/dags:/opt/airflow/dags
     - ../../schedule/airflow/logs:/opt/airflow/logs
@@ -51,6 +57,7 @@ x-airflow-common: &airflow-common
     - ../../schedule/airflow/config:/opt/airflow/config
     - ../../metadata:/opt/pipezone/metadata:ro
     - ../../core:/opt/pipezone/core:ro
+    - ../../data:/opt/pipezone/data
   user: "${AIRFLOW_UID:-50000}:0"
   networks:
     - pipezone_network

@@ -72,46 +72,72 @@ PipeZone is a comprehensive self-hosted data platform that brings Databricks-lik
 
 ### Prerequisites
 
-- Docker 20.10+ and Docker Compose 2.0+
-- 8GB+ RAM available
-- 50GB+ disk space
+- **Docker Desktop** (Windows/Mac) or **Docker + Docker Compose** (Linux)
+- **Python 3.11+** (for password hashing)
+- **8GB+ RAM** available
+- **50GB+ disk** space
 - (Optional) Kubernetes cluster for Spark
+
+> **📖 Detailed Installation Guide**: See [QUICKSTART.md](QUICKSTART.md) for platform-specific instructions (Windows/Linux/macOS)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/databek-uz/pipezone.git
-   cd pipezone
-   ```
+#### 🪟 Windows (PowerShell)
 
-2. **Create environment configuration**
-   ```bash
-   cp .env.example .env
-   # Edit .env and update passwords and configuration
-   ```
+```powershell
+# 1. Clone the repository
+git clone https://github.com/databek-uz/pipezone.git
+cd pipezone
 
-3. **Start the platform**
-   ```bash
-   ./scripts/start_platform.sh
-   ```
+# 2. Install Python dependencies
+pip install bcrypt cryptography
 
-4. **Create your first user**
-   ```bash
-   ./services/auth/create_user.sh john mypassword123
-   ```
+# 3. Create environment configuration
+Copy-Item .env.example .env
+# Edit .env and update passwords
 
-5. **Start VS Code Server for the user**
-   ```bash
-   docker-compose -f docker-compose.yml -f docker-compose.john.yml up -d
-   ```
+# 4. Start the platform
+.\scripts\start_platform.ps1
 
-6. **Access the platform**
-   - **VS Code Server**: http://localhost:8081 (or assigned port)
-   - **Airflow**: http://localhost:8081
-   - **MinIO Console**: http://localhost:9001
-   - **Grafana**: http://localhost:3000
-   - **Spark History**: http://localhost:18080
+# 5. Create your first user
+.\services\auth\create_user.ps1 john mypassword123
+
+# 6. Start VS Code Server for the user
+docker-compose -f docker-compose.yml -f docker-compose.john.yml up -d
+```
+
+#### 🐧 Linux / 🍎 macOS (Bash)
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/databek-uz/pipezone.git
+cd pipezone
+
+# 2. Install Python dependencies
+pip install bcrypt cryptography
+
+# 3. Create environment configuration
+cp .env.example .env
+# Edit .env and update passwords
+
+# 4. Start the platform
+chmod +x scripts/*.sh services/auth/*.sh
+./scripts/start_platform.sh
+
+# 5. Create your first user
+./services/auth/create_user.sh john mypassword123
+
+# 6. Start VS Code Server for the user
+docker-compose -f docker-compose.yml -f docker-compose.john.yml up -d
+```
+
+### Access the Platform
+
+- **VS Code Server**: http://localhost:8081 (or assigned port)
+- **Airflow**: http://localhost:8081 (admin / admin123)
+- **MinIO Console**: http://localhost:9001 (admin / changeme123)
+- **Grafana**: http://localhost:3000 (admin / admin123)
+- **Spark History**: http://localhost:18080
 
 ### First Steps
 
@@ -119,6 +145,18 @@ PipeZone is a comprehensive self-hosted data platform that brings Databricks-lik
 2. Try the example notebooks in `/shared/notebooks/examples/`
 3. Schedule a notebook job via Airflow
 4. Monitor your Spark jobs in the History Server
+
+### Stop the Platform
+
+**Windows:**
+```powershell
+.\scripts\stop_platform.ps1
+```
+
+**Linux/macOS:**
+```bash
+./scripts/stop_platform.sh
+```
 
 ---
 

@@ -9,7 +9,7 @@ param(
   [string]$Username,
 
   [Parameter(Mandatory = $true)]
-  [string]$Password
+  [SecureString]$Password
 )
 
 # Detect script directory and project root
@@ -113,7 +113,7 @@ Write-Host "✓ Created MinIO bucket: user-workspaces/$Username" -ForegroundColo
 
 # Create user's docker-compose override (for VS Code Server instance)
 $userCount = (Get-Content $USERS_FILE).Count
-$VSCODE_PORT = 8080 + $userCount
+$VSCODE_PORT = 1000 + $userCount
 
 $composeContent = @"
 version: '3.8'

@@ -35,7 +35,7 @@ if command -v mc &> /dev/null; then
 fi
 
 # Initialize virtual environment
-if [ ! -d "$VENV_PATH" ]; then
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
     echo "Initializing virtual environment..."
     /home/coder/scripts/setup_venv.sh
 else

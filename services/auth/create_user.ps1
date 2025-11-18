@@ -5,11 +5,11 @@
 # =============================================================================
 
 param(
-    [Parameter(Mandatory=$true)]
-    [string]$Username,
+  [Parameter(Mandatory = $true)]
+  [string]$Username,
 
-    [Parameter(Mandatory=$true)]
-    [string]$Password
+  [Parameter(Mandatory = $true)]
+  [string]$Password
 )
 
 Write-Host "=========================================" -ForegroundColor Cyan
@@ -22,11 +22,11 @@ $WORKSPACES_DIR = "..\..\workspaces"
 
 # Check if user already exists
 if (Test-Path $USERS_FILE) {
-    $existingUsers = Get-Content $USERS_FILE
-    if ($existingUsers | Select-String -Pattern "^${Username}:") {
-        Write-Host "Error: User $Username already exists" -ForegroundColor Red
-        exit 1
-    }
+  $existingUsers = Get-Content $USERS_FILE
+  if ($existingUsers | Select-String -Pattern "^${Username}:") {
+    Write-Host "Error: User $Username already exists" -ForegroundColor Red
+    exit 1
+  }
 }
 
 # Generate password hash using Python
@@ -34,9 +34,9 @@ Write-Host "Generating password hash..." -ForegroundColor Yellow
 $passwordHash = python -c "import bcrypt; print(bcrypt.hashpw('$Password'.encode(), bcrypt.gensalt()).decode())"
 
 if (-not $passwordHash) {
-    Write-Host "Error: Failed to generate password hash" -ForegroundColor Red
-    Write-Host "Please install bcrypt: pip install bcrypt" -ForegroundColor Yellow
-    exit 1
+  Write-Host "Error: Failed to generate password hash" -ForegroundColor Red
+  Write-Host "Please install bcrypt: pip install bcrypt" -ForegroundColor Yellow
+  exit 1
 }
 
 # Create workspace directory

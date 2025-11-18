@@ -12,7 +12,8 @@ Write-Host ""
 # Check if Docker is running
 try {
     docker info | Out-Null
-} catch {
+}
+catch {
     Write-Host "Error: Docker is not running" -ForegroundColor Red
     Write-Host "Please start Docker Desktop and try again" -ForegroundColor Red
     exit 1
@@ -95,14 +96,16 @@ for ($i = 0; $i -lt 30; $i++) {
             $pgReady = $true
             break
         }
-    } catch {}
+    }
+    catch {}
     Write-Host "  Waiting for PostgreSQL..." -ForegroundColor Gray
     Start-Sleep -Seconds 2
 }
 
 if ($pgReady) {
     Write-Host "  ✓ PostgreSQL is ready" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✗ PostgreSQL failed to start" -ForegroundColor Red
     exit 1
 }
@@ -116,14 +119,16 @@ for ($i = 0; $i -lt 30; $i++) {
             $redisReady = $true
             break
         }
-    } catch {}
+    }
+    catch {}
     Write-Host "  Waiting for Redis..." -ForegroundColor Gray
     Start-Sleep -Seconds 2
 }
 
 if ($redisReady) {
     Write-Host "  ✓ Redis is ready" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✗ Redis failed to start" -ForegroundColor Red
     exit 1
 }
@@ -137,14 +142,16 @@ for ($i = 0; $i -lt 30; $i++) {
             $minioReady = $true
             break
         }
-    } catch {}
+    }
+    catch {}
     Write-Host "  Waiting for MinIO..." -ForegroundColor Gray
     Start-Sleep -Seconds 2
 }
 
 if ($minioReady) {
     Write-Host "  ✓ MinIO is ready" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "  ✗ MinIO failed to start" -ForegroundColor Red
     exit 1
 }
@@ -158,7 +165,8 @@ if (-not (Test-Path ".airflow_initialized")) {
     docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
     New-Item -ItemType File -Path ".airflow_initialized" -Force | Out-Null
     Write-Host "✓ Airflow database initialized" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "Airflow database already initialized - skipping..." -ForegroundColor Gray
     Write-Host "Running database upgrade to apply any new migrations..." -ForegroundColor Yellow
     docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
@@ -194,14 +202,16 @@ for ($i = 0; $i -lt 60; $i++) {
             $airflowReady = $true
             break
         }
-    } catch {}
+    }
+    catch {}
     Write-Host "  Waiting for Airflow webserver..." -ForegroundColor Gray
     Start-Sleep -Seconds 5
 }
 
 if ($airflowReady) {
     Write-Host "✓ Airflow is ready" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "⚠ Airflow may still be starting..." -ForegroundColor Yellow
 }
 Write-Host ""

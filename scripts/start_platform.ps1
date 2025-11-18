@@ -151,11 +151,19 @@ if ($minioReady) {
 
 Write-Host ""
 
-# Initialize Airflow database
-Write-Host "Initializing Airflow database..." -ForegroundColor Yellow
-docker-compose run --rm airflow-webserver airflow db init 2>&1 | Out-Null
-docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
-Write-Host "✓ Airflow database initialized" -ForegroundColor Green
+# Initialize Airflow database (only on first run)
+if (-not (Test-Path ".airflow_initialized")) {
+    Write-Host "First run detected - initializing Airflow database..." -ForegroundColor Yellow
+    docker-compose run --rm airflow-webserver airflow db init 2>&1 | Out-Null
+    docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
+    New-Item -ItemType File -Path ".airflow_initialized" -Force | Out-Null
+    Write-Host "✓ Airflow database initialized" -ForegroundColor Green
+} else {
+    Write-Host "Airflow database already initialized - skipping..." -ForegroundColor Gray
+    Write-Host "Running database upgrade to apply any new migrations..." -ForegroundColor Yellow
+    docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
+    Write-Host "✓ Airflow database ready" -ForegroundColor Green
+}
 Write-Host ""
 
 # Start Airflow services

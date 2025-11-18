@@ -90,11 +90,19 @@ echo "  ✓ MinIO is ready"
 
 echo ""
 
-# Initialize Airflow database
-echo "Initializing Airflow database..."
-docker-compose run --rm airflow-webserver airflow db init || true
-docker-compose run --rm airflow-webserver airflow db upgrade || true
-echo "✓ Airflow database initialized"
+# Initialize Airflow database (only on first run)
+if [ ! -f ".airflow_initialized" ]; then
+    echo "First run detected - initializing Airflow database..."
+    docker-compose run --rm airflow-webserver airflow db init
+    docker-compose run --rm airflow-webserver airflow db upgrade
+    touch .airflow_initialized
+    echo "✓ Airflow database initialized"
+else
+    echo "Airflow database already initialized - skipping..."
+    echo "Running database upgrade to apply any new migrations..."
+    docker-compose run --rm airflow-webserver airflow db upgrade || true
+    echo "✓ Airflow database ready"
+fi
 echo ""
 
 # Start Airflow services

@@ -267,14 +267,34 @@ docker ps
 **Windows:**
 ```powershell
 docker-compose down -v
-Remove-Item -Recurse -Force data
+Remove-Item -Recurse -Force data, workspaces, .airflow_initialized
 ```
 
 **Linux/macOS:**
 ```bash
 docker-compose down -v
-rm -rf data/
+rm -rf data/ workspaces/ .airflow_initialized
 ```
+
+### 💾 Data Persistence
+
+**Your data is safe!** The platform uses Docker volumes and local directories to persist all data:
+
+✅ **Preserved on restart:**
+- ✅ Airflow database (DAGs, task history, connections)
+- ✅ User workspaces and notebooks
+- ✅ MinIO buckets and uploaded files
+- ✅ PostgreSQL data
+- ✅ Grafana dashboards and settings
+- ✅ Prometheus metrics history
+
+**How it works:**
+- First run: Creates `.airflow_initialized` marker file and initializes database
+- Subsequent runs: Skips initialization, only runs migrations to keep DB updated
+- Your data stays in `data/`, `workspaces/`, and Docker volumes
+
+**To reset everything:**
+Delete the marker file and volumes as shown in "Remove all data" section above.
 
 ---
 

@@ -1,0 +1,405 @@
+version: '3.8'
+
+# =============================================================================
+# PipeZone Platform - Docker Compose Configuration
+# =============================================================================
+# Self-hosted Databricks-like platform with:
+# - VS Code Server as IDE
+# - Spark on Kubernetes for compute
+# - MinIO for S3-compatible storage
+# - Airflow for orchestration
+# - Multi-user support with isolated sessions
+# =============================================================================
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:${AIRFLOW_VERSION:-2.8.1}-python3.11
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: ${AIRFLOW__CORE__EXECUTOR}
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: ${AIRFLOW__DATABASE__SQL_ALCHEMY_CONN}
+    AIRFLOW__CELERY__RESULT_BACKEND: ${AIRFLOW__CELERY__RESULT_BACKEND}
+    AIRFLOW__CELERY__BROKER_URL: ${AIRFLOW__CELERY__BROKER_URL}
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-}
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: ${AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION}
+    AIRFLOW__CORE__LOAD_EXAMPLES: ${AIRFLOW__CORE__LOAD_EXAMPLES}
+    AIRFLOW__API__AUTH_BACKENDS: ${AIRFLOW__API__AUTH_BACKENDS}
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: ${AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK}
+    PYTHONPATH: /opt/airflow/plugins
+    MINIO_ENDPOINT: ${MINIO_ENDPOINT}
+    MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+    MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+  volumes:
+    - ./services/scheduler/dags:/opt/airflow/dags
+    - ./services/scheduler/plugins:/opt/airflow/plugins
+    - ./services/scheduler/scripts:/opt/airflow/scripts
+    - ./shared:/shared
+    - airflow_logs:/opt/airflow/logs
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  networks:
+    - pipezone-network
+
+networks:
+  pipezone-network:
+    driver: bridge
+    name: pipezone-network
+
+volumes:
+  postgres_data:
+    name: pipezone_postgres_data
+  redis_data:
+    name: pipezone_redis_data
+  minio_data:
+    name: pipezone_minio_data
+  airflow_logs:
+    name: pipezone_airflow_logs
+  spark_logs:
+    name: pipezone_spark_logs
+  prometheus_data:
+    name: pipezone_prometheus_data
+  grafana_data:
+    name: pipezone_grafana_data
+
+services:
+  # ===========================================================================
+  # PostgreSQL - Airflow Metadata Database
+  # ===========================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: pipezone-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # Redis - Airflow Celery Broker
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: pipezone-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # MinIO - S3-Compatible Object Storage
+  # ===========================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: pipezone-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER: ${MINIO_BROWSER:-on}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # MinIO Client - Initialize Buckets
+  # ===========================================================================
+  minio-init:
+    image: minio/mc:latest
+    container_name: pipezone-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Waiting for MinIO to be ready...';
+      sleep 5;
+      mc alias set minio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      echo 'Creating buckets...';
+      mc mb --ignore-existing minio/user-workspaces;
+      mc mb --ignore-existing minio/shared-data;
+      mc mb --ignore-existing minio/notebook-outputs;
+      mc mb --ignore-existing minio/spark-logs;
+      mc mb --ignore-existing minio/model-registry;
+      echo 'Setting bucket policies...';
+      mc anonymous set download minio/shared-data;
+      mc version enable minio/user-workspaces;
+      mc version enable minio/notebook-outputs;
+      mc ilm add --expiry-days 30 minio/spark-logs;
+      echo 'MinIO initialization complete!';
+      exit 0;
+      "
+    networks:
+      - pipezone-network
+
+  # ===========================================================================
+  # Airflow Webserver
+  # ===========================================================================
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: pipezone-airflow-webserver
+    command: webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USERNAME:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin123}
+      _AIRFLOW_WWW_USER_FIRSTNAME: ${AIRFLOW_ADMIN_FIRSTNAME:-Admin}
+      _AIRFLOW_WWW_USER_LASTNAME: ${AIRFLOW_ADMIN_LASTNAME:-User}
+      _AIRFLOW_WWW_USER_EMAIL: ${AIRFLOW_ADMIN_EMAIL:-admin@pipezone.local}
+
+  # ===========================================================================
+  # Airflow Scheduler
+  # ===========================================================================
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: pipezone-airflow-scheduler
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Airflow Workers (Celery)
+  # ===========================================================================
+  airflow-worker-1:
+    <<: *airflow-common
+    container_name: pipezone-airflow-worker-1
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  airflow-worker-2:
+    <<: *airflow-common
+    container_name: pipezone-airflow-worker-2
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  airflow-worker-3:
+    <<: *airflow-common
+    container_name: pipezone-airflow-worker-3
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Airflow Flower - Celery Monitoring
+  # ===========================================================================
+  airflow-flower:
+    <<: *airflow-common
+    container_name: pipezone-airflow-flower
+    command: celery flower
+    ports:
+      - "5555:5555"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:5555/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Spark History Server
+  # ===========================================================================
+  spark-history-server:
+    image: apache/spark:${SPARK_VERSION:-3.5.0}
+    container_name: pipezone-spark-history
+    command: >
+      /opt/spark/sbin/start-history-server.sh
+    environment:
+      SPARK_NO_DAEMONIZE: "true"
+      SPARK_HISTORY_OPTS: >
+        -Dspark.history.fs.logDirectory=/spark-logs
+        -Dspark.history.ui.port=18080
+    volumes:
+      - spark_logs:/spark-logs
+    ports:
+      - "${SPARK_HISTORY_SERVER_PORT:-18080}:18080"
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # Prometheus - Metrics Collection
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: pipezone-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # Grafana - Metrics Visualization
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pipezone-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+
+  # ===========================================================================
+  # Node Exporter - System Metrics
+  # ===========================================================================
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: pipezone-node-exporter
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+
+  # ===========================================================================
+  # cAdvisor - Container Metrics
+  # ===========================================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: pipezone-cadvisor
+    privileged: true
+    devices:
+      - /dev/kmsg:/dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8082:8080"
+    restart: unless-stopped
+    networks:
+      - pipezone-network
+
+# =============================================================================
+# Note: VS Code Server instances are created dynamically per user
+# Use: docker-compose -f docker-compose.yml -f docker-compose.vscode.yml up
+# Or use the provided scripts/create_user_container.sh script
+# =============================================================================

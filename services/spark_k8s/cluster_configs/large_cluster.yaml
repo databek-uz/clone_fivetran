@@ -1,0 +1,168 @@
+# =============================================================================
+# Spark Cluster Configuration - Large
+# =============================================================================
+# Resource Profile: Large workloads, heavy data processing
+# Driver: 4 CPU, 8GB RAM
+# Executors: 8 instances, 4 CPU, 8GB RAM each (with dynamic allocation)
+# =============================================================================
+
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: pipezone-large-cluster-template
+  namespace: spark-jobs
+  labels:
+    cluster-size: large
+    platform: pipezone
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: apache/spark-py:v3.5.0
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/work-dir/main.py
+  sparkVersion: 3.5.0
+
+  # Driver Configuration
+  driver:
+    cores: 4
+    memory: "8192m"
+    labels:
+      version: 3.5.0
+      cluster-size: large
+      platform: pipezone
+    serviceAccount: spark
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+      - name: SPARK_LOG_LEVEL
+        value: "WARN"
+    javaOptions: "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35"
+
+  # Executor Configuration
+  executor:
+    cores: 4
+    instances: 8
+    memory: "8192m"
+    labels:
+      version: 3.5.0
+      cluster-size: large
+      platform: pipezone
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+    javaOptions: "-XX:+UseG1GC -XX:InitiatingHeapOccupancyPercent=35"
+
+  # Dynamic Allocation
+  dynamicAllocation:
+    enabled: true
+    initialExecutors: 4
+    minExecutors: 4
+    maxExecutors: 12
+
+  # Spark Configuration
+  sparkConf:
+    # Application
+    "spark.app.name": "PipeZone-Large-Cluster"
+    "spark.submit.deployMode": "cluster"
+
+    # Kubernetes
+    "spark.kubernetes.namespace": "spark-jobs"
+    "spark.kubernetes.authenticate.driver.serviceAccountName": "spark"
+    "spark.kubernetes.container.image": "apache/spark-py:v3.5.0"
+    "spark.kubernetes.driver.request.cores": "4"
+    "spark.kubernetes.executor.request.cores": "4"
+
+    # Dynamic Allocation
+    "spark.dynamicAllocation.enabled": "true"
+    "spark.dynamicAllocation.shuffleTracking.enabled": "true"
+    "spark.dynamicAllocation.initialExecutors": "4"
+    "spark.dynamicAllocation.minExecutors": "4"
+    "spark.dynamicAllocation.maxExecutors": "12"
+    "spark.dynamicAllocation.executorIdleTimeout": "60s"
+    "spark.dynamicAllocation.cachedExecutorIdleTimeout": "120s"
+
+    # Executor
+    "spark.executor.instances": "8"
+    "spark.executor.memory": "8g"
+    "spark.executor.cores": "4"
+    "spark.executor.memoryOverhead": "1024m"
+
+    # Driver
+    "spark.driver.memory": "8g"
+    "spark.driver.cores": "4"
+    "spark.driver.memoryOverhead": "1024m"
+
+    # Memory Management
+    "spark.memory.fraction": "0.8"
+    "spark.memory.storageFraction": "0.3"
+    "spark.memory.offHeap.enabled": "true"
+    "spark.memory.offHeap.size": "2g"
+
+    # Shuffle
+    "spark.shuffle.service.enabled": "false"
+    "spark.sql.shuffle.partitions": "200"
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.coalescePartitions.enabled": "true"
+    "spark.sql.adaptive.advisoryPartitionSizeInBytes": "128MB"
+    "spark.sql.adaptive.skewJoin.enabled": "true"
+
+    # S3/MinIO Configuration
+    "spark.hadoop.fs.s3a.endpoint": "http://minio:9000"
+    "spark.hadoop.fs.s3a.access.key": "${MINIO_ACCESS_KEY}"
+    "spark.hadoop.fs.s3a.secret.key": "${MINIO_SECRET_KEY}"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3a.fast.upload": "true"
+    "spark.hadoop.fs.s3a.connection.maximum": "200"
+    "spark.hadoop.fs.s3a.threads.max": "64"
+    "spark.hadoop.fs.s3a.multipart.size": "104857600"
+
+    # Event Logging
+    "spark.eventLog.enabled": "true"
+    "spark.eventLog.dir": "s3a://spark-logs/"
+    "spark.eventLog.compress": "true"
+    "spark.eventLog.rolling.enabled": "true"
+    "spark.eventLog.rolling.maxFileSize": "128m"
+
+    # UI
+    "spark.ui.enabled": "true"
+    "spark.ui.port": "4040"
+    "spark.ui.retainedJobs": "100"
+    "spark.ui.retainedStages": "100"
+
+    # Performance Tuning
+    "spark.sql.files.maxPartitionBytes": "268435456"
+    "spark.sql.autoBroadcastJoinThreshold": "20971520"
+    "spark.sql.files.maxRecordsPerFile": "0"
+    "spark.serializer": "org.apache.spark.serializer.KryoSerializer"
+    "spark.kryoserializer.buffer.max": "256m"
+
+    # Network
+    "spark.network.timeout": "600s"
+    "spark.executor.heartbeatInterval": "30s"
+
+  # Restart Policy
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+
+  # Resource Limits
+  resources:
+    limits:
+      cpu: "32"
+      memory: "64Gi"
+    requests:
+      cpu: "16"
+      memory: "32Gi"
+
+  # Monitoring
+  monitoring:
+    exposeDriverMetrics: true
+    exposeExecutorMetrics: true
+    prometheus:
+      jmxExporterJar: "/prometheus/jmx_prometheus_javaagent-0.17.0.jar"
+      port: 8090

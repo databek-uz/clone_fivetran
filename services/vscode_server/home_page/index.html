@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PipeZone - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <h1>🚀 PipeZone</h1>
+                <p class="tagline">Self-Hosted Data Platform</p>
+            </div>
+            <div class="user-info">
+                <span class="user-name" id="userName">Loading...</span>
+                <span class="cluster-badge" id="clusterBadge">medium</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Quick Actions -->
+        <section class="quick-actions">
+            <h2>Quick Actions</h2>
+            <div class="action-grid">
+                <button class="action-btn" onclick="createNotebook()">
+                    <span class="icon">📓</span>
+                    <span class="text">New Notebook</span>
+                </button>
+                <button class="action-btn" onclick="scheduleJob()">
+                    <span class="icon">⏰</span>
+                    <span class="text">Schedule Job</span>
+                </button>
+                <button class="action-btn" onclick="openShared()">
+                    <span class="icon">📁</span>
+                    <span class="text">Shared Code</span>
+                </button>
+                <button class="action-btn" onclick="uploadToMinio()">
+                    <span class="icon">☁️</span>
+                    <span class="text">Upload Data</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Service Status -->
+        <section class="service-status">
+            <h2>Service Status</h2>
+            <div class="status-grid">
+                <!-- MinIO -->
+                <div class="status-card" id="minioCard">
+                    <div class="status-header">
+                        <h3>MinIO Storage</h3>
+                        <span class="status-indicator" id="minioStatus">●</span>
+                    </div>
+                    <div class="status-body">
+                        <div class="stat">
+                            <span class="stat-label">Storage Used</span>
+                            <span class="stat-value" id="minioStorage">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Buckets</span>
+                            <span class="stat-value" id="minioBuckets">--</span>
+                        </div>
+                    </div>
+                    <div class="status-footer">
+                        <a href="#" onclick="openMinio(); return false;" class="link">Open Console →</a>
+                    </div>
+                </div>
+
+                <!-- Spark -->
+                <div class="status-card" id="sparkCard">
+                    <div class="status-header">
+                        <h3>Spark Cluster</h3>
+                        <span class="status-indicator" id="sparkStatus">●</span>
+                    </div>
+                    <div class="status-body">
+                        <div class="stat">
+                            <span class="stat-label">Active Jobs</span>
+                            <span class="stat-value" id="sparkJobs">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Executors</span>
+                            <span class="stat-value" id="sparkExecutors">--</span>
+                        </div>
+                    </div>
+                    <div class="status-footer">
+                        <a href="#" onclick="openSparkUI(); return false;" class="link">Open UI →</a>
+                    </div>
+                </div>
+
+                <!-- Airflow -->
+                <div class="status-card" id="airflowCard">
+                    <div class="status-header">
+                        <h3>Scheduler</h3>
+                        <span class="status-indicator" id="airflowStatus">●</span>
+                    </div>
+                    <div class="status-body">
+                        <div class="stat">
+                            <span class="stat-label">Running DAGs</span>
+                            <span class="stat-value" id="airflowRunning">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Next Run</span>
+                            <span class="stat-value" id="airflowNext">--</span>
+                        </div>
+                    </div>
+                    <div class="status-footer">
+                        <a href="#" onclick="openAirflow(); return false;" class="link">Open Airflow →</a>
+                    </div>
+                </div>
+
+                <!-- Jupyter -->
+                <div class="status-card" id="jupyterCard">
+                    <div class="status-header">
+                        <h3>Jupyter Lab</h3>
+                        <span class="status-indicator status-active">●</span>
+                    </div>
+                    <div class="status-body">
+                        <div class="stat">
+                            <span class="stat-label">Kernel</span>
+                            <span class="stat-value">Python 3.11</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Status</span>
+                            <span class="stat-value">Ready</span>
+                        </div>
+                    </div>
+                    <div class="status-footer">
+                        <a href="#" onclick="openJupyter(); return false;" class="link">Launch Lab →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Two Column Layout -->
+        <div class="two-column">
+            <!-- Recent Notebooks -->
+            <section class="recent-notebooks">
+                <h2>Recent Notebooks</h2>
+                <div class="notebook-list" id="notebookList">
+                    <p class="loading">Loading notebooks...</p>
+                </div>
+            </section>
+
+            <!-- Cluster Selector -->
+            <section class="cluster-selector">
+                <h2>Spark Cluster Configuration</h2>
+                <div class="cluster-options">
+                    <div class="cluster-option" data-cluster="small_cluster">
+                        <input type="radio" name="cluster" id="small" value="small_cluster">
+                        <label for="small">
+                            <div class="cluster-name">Small Cluster</div>
+                            <div class="cluster-specs">
+                                2 Executors • 2GB each • 1 CPU
+                            </div>
+                        </label>
+                    </div>
+                    <div class="cluster-option" data-cluster="medium_cluster">
+                        <input type="radio" name="cluster" id="medium" value="medium_cluster" checked>
+                        <label for="medium">
+                            <div class="cluster-name">Medium Cluster</div>
+                            <div class="cluster-specs">
+                                4 Executors • 4GB each • 2 CPU
+                            </div>
+                        </label>
+                    </div>
+                    <div class="cluster-option" data-cluster="large_cluster">
+                        <input type="radio" name="cluster" id="large" value="large_cluster">
+                        <label for="large">
+                            <div class="cluster-name">Large Cluster</div>
+                            <div class="cluster-specs">
+                                8 Executors • 8GB each • 4 CPU
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="saveClusterSelection()">
+                    Save Configuration
+                </button>
+            </section>
+        </div>
+
+        <!-- Documentation Links -->
+        <section class="documentation">
+            <h2>Documentation & Resources</h2>
+            <div class="doc-grid">
+                <a href="/shared/docs/USER_GUIDE.md" class="doc-link">
+                    <span class="icon">📖</span>
+                    <span>User Guide</span>
+                </a>
+                <a href="/shared/notebooks/examples/" class="doc-link">
+                    <span class="icon">💡</span>
+                    <span>Examples</span>
+                </a>
+                <a href="/shared/docs/API_REFERENCE.md" class="doc-link">
+                    <span class="icon">🔌</span>
+                    <span>API Reference</span>
+                </a>
+                <a href="https://github.com/pipezone/docs" class="doc-link" target="_blank">
+                    <span class="icon">🌐</span>
+                    <span>GitHub</span>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>PipeZone Platform v1.0.0 | Made with ❤️ for data engineers</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="api/minio_client.js"></script>
+    <script src="api/spark_client.js"></script>
+    <script src="api/airflow_client.js"></script>
+    <script src="components/dashboard.js"></script>
+    <script src="components/service_status.js"></script>
+    <script src="components/cluster_selector.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+# =============================================================================
+# Spark Cluster Configuration - Small
+# =============================================================================
+# Resource Profile: Small workloads, development, testing
+# Driver: 1 CPU, 2GB RAM
+# Executors: 2 instances, 1 CPU, 2GB RAM each
+# =============================================================================
+
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: pipezone-small-cluster-template
+  namespace: spark-jobs
+  labels:
+    cluster-size: small
+    platform: pipezone
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: apache/spark-py:v3.5.0
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/work-dir/main.py
+  sparkVersion: 3.5.0
+
+  # Driver Configuration
+  driver:
+    cores: 1
+    memory: "2048m"
+    labels:
+      version: 3.5.0
+      cluster-size: small
+      platform: pipezone
+    serviceAccount: spark
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+      - name: SPARK_LOG_LEVEL
+        value: "INFO"
+
+  # Executor Configuration
+  executor:
+    cores: 1
+    instances: 2
+    memory: "2048m"
+    labels:
+      version: 3.5.0
+      cluster-size: small
+      platform: pipezone
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+
+  # Spark Configuration
+  sparkConf:
+    # Application
+    "spark.app.name": "PipeZone-Small-Cluster"
+    "spark.submit.deployMode": "cluster"
+
+    # Kubernetes
+    "spark.kubernetes.namespace": "spark-jobs"
+    "spark.kubernetes.authenticate.driver.serviceAccountName": "spark"
+    "spark.kubernetes.container.image": "apache/spark-py:v3.5.0"
+
+    # Executor
+    "spark.executor.instances": "2"
+    "spark.executor.memory": "2g"
+    "spark.executor.cores": "1"
+
+    # Driver
+    "spark.driver.memory": "2g"
+    "spark.driver.cores": "1"
+
+    # Memory Management
+    "spark.memory.fraction": "0.8"
+    "spark.memory.storageFraction": "0.3"
+
+    # Shuffle
+    "spark.shuffle.service.enabled": "false"
+    "spark.sql.shuffle.partitions": "20"
+
+    # S3/MinIO Configuration
+    "spark.hadoop.fs.s3a.endpoint": "http://minio:9000"
+    "spark.hadoop.fs.s3a.access.key": "${MINIO_ACCESS_KEY}"
+    "spark.hadoop.fs.s3a.secret.key": "${MINIO_SECRET_KEY}"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+
+    # Event Logging
+    "spark.eventLog.enabled": "true"
+    "spark.eventLog.dir": "s3a://spark-logs/"
+
+    # UI
+    "spark.ui.enabled": "true"
+    "spark.ui.port": "4040"
+
+  # Restart Policy
+  restartPolicy:
+    type: Never
+
+  # Resource Limits
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+    requests:
+      cpu: "1"
+      memory: "2Gi"

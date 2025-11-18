@@ -1,0 +1,135 @@
+# =============================================================================
+# Spark Cluster Configuration - Medium
+# =============================================================================
+# Resource Profile: Medium workloads, typical production use
+# Driver: 2 CPU, 4GB RAM
+# Executors: 4 instances, 2 CPU, 4GB RAM each (with dynamic allocation)
+# =============================================================================
+
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: pipezone-medium-cluster-template
+  namespace: spark-jobs
+  labels:
+    cluster-size: medium
+    platform: pipezone
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: apache/spark-py:v3.5.0
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/spark/work-dir/main.py
+  sparkVersion: 3.5.0
+
+  # Driver Configuration
+  driver:
+    cores: 2
+    memory: "4096m"
+    labels:
+      version: 3.5.0
+      cluster-size: medium
+      platform: pipezone
+    serviceAccount: spark
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+      - name: SPARK_LOG_LEVEL
+        value: "INFO"
+
+  # Executor Configuration
+  executor:
+    cores: 2
+    instances: 4
+    memory: "4096m"
+    labels:
+      version: 3.5.0
+      cluster-size: medium
+      platform: pipezone
+    env:
+      - name: MINIO_ENDPOINT
+        value: "http://minio:9000"
+
+  # Dynamic Allocation
+  dynamicAllocation:
+    enabled: true
+    initialExecutors: 2
+    minExecutors: 2
+    maxExecutors: 6
+
+  # Spark Configuration
+  sparkConf:
+    # Application
+    "spark.app.name": "PipeZone-Medium-Cluster"
+    "spark.submit.deployMode": "cluster"
+
+    # Kubernetes
+    "spark.kubernetes.namespace": "spark-jobs"
+    "spark.kubernetes.authenticate.driver.serviceAccountName": "spark"
+    "spark.kubernetes.container.image": "apache/spark-py:v3.5.0"
+
+    # Dynamic Allocation
+    "spark.dynamicAllocation.enabled": "true"
+    "spark.dynamicAllocation.shuffleTracking.enabled": "true"
+    "spark.dynamicAllocation.initialExecutors": "2"
+    "spark.dynamicAllocation.minExecutors": "2"
+    "spark.dynamicAllocation.maxExecutors": "6"
+
+    # Executor
+    "spark.executor.instances": "4"
+    "spark.executor.memory": "4g"
+    "spark.executor.cores": "2"
+
+    # Driver
+    "spark.driver.memory": "4g"
+    "spark.driver.cores": "2"
+
+    # Memory Management
+    "spark.memory.fraction": "0.8"
+    "spark.memory.storageFraction": "0.3"
+
+    # Shuffle
+    "spark.shuffle.service.enabled": "false"
+    "spark.sql.shuffle.partitions": "100"
+    "spark.sql.adaptive.enabled": "true"
+    "spark.sql.adaptive.coalescePartitions.enabled": "true"
+
+    # S3/MinIO Configuration
+    "spark.hadoop.fs.s3a.endpoint": "http://minio:9000"
+    "spark.hadoop.fs.s3a.access.key": "${MINIO_ACCESS_KEY}"
+    "spark.hadoop.fs.s3a.secret.key": "${MINIO_SECRET_KEY}"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3a.fast.upload": "true"
+    "spark.hadoop.fs.s3a.connection.maximum": "100"
+
+    # Event Logging
+    "spark.eventLog.enabled": "true"
+    "spark.eventLog.dir": "s3a://spark-logs/"
+    "spark.eventLog.compress": "true"
+
+    # UI
+    "spark.ui.enabled": "true"
+    "spark.ui.port": "4040"
+
+    # Performance Tuning
+    "spark.sql.files.maxPartitionBytes": "134217728"
+    "spark.sql.autoBroadcastJoinThreshold": "10485760"
+
+  # Restart Policy
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+
+  # Resource Limits
+  resources:
+    limits:
+      cpu: "8"
+      memory: "16Gi"
+    requests:
+      cpu: "4"
+      memory: "8Gi"

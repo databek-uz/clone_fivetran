@@ -1,0 +1,106 @@
+# =============================================================================
+# Prometheus Configuration for PipeZone Platform
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'pipezone'
+    environment: 'production'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+rule_files:
+  # - "alerts.yml"
+
+# Scrape configurations
+scrape_configs:
+  # =============================================================================
+  # Prometheus Self-Monitoring
+  # =============================================================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+        labels:
+          service: 'prometheus'
+
+  # =============================================================================
+  # Node Exporter - System Metrics
+  # =============================================================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node-exporter'
+          instance: 'pipezone-host'
+
+  # =============================================================================
+  # cAdvisor - Container Metrics
+  # =============================================================================
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          service: 'cadvisor'
+
+  # =============================================================================
+  # PostgreSQL Exporter (if enabled)
+  # =============================================================================
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgres'
+
+  # =============================================================================
+  # Redis Exporter (if enabled)
+  # =============================================================================
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis-exporter:9121']
+  #       labels:
+  #         service: 'redis'
+
+  # =============================================================================
+  # MinIO Metrics
+  # =============================================================================
+  - job_name: 'minio'
+    metrics_path: /minio/v2/metrics/cluster
+    static_configs:
+      - targets: ['minio:9000']
+        labels:
+          service: 'minio'
+
+  # =============================================================================
+  # Airflow Metrics (if StatsD exporter enabled)
+  # =============================================================================
+  # - job_name: 'airflow'
+  #   static_configs:
+  #     - targets: ['statsd-exporter:9102']
+  #       labels:
+  #         service: 'airflow'
+
+  # =============================================================================
+  # Spark Metrics (when available)
+  # =============================================================================
+  # - job_name: 'spark'
+  #   static_configs:
+  #     - targets: ['spark-history-server:18080']
+  #       labels:
+  #         service: 'spark'
+
+  # =============================================================================
+  # Custom Application Metrics
+  # =============================================================================
+  # - job_name: 'vscode-exporter'
+  #   static_configs:
+  #     - targets: ['vscode-exporter:9200']
+  #       labels:
+  #         service: 'vscode'

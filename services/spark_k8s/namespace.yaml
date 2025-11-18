@@ -1,0 +1,12 @@
+# =============================================================================
+# Kubernetes Namespace for Spark Jobs
+# =============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: spark-jobs
+  labels:
+    name: spark-jobs
+    platform: pipezone
+    managed-by: pipezone-platform

@@ -7,6 +7,13 @@
 
 set -e
 
+# Detect script directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Change to project root directory
+cd "$PROJECT_ROOT"
+
 # Check arguments
 if [ "$#" -lt 2 ]; then
     echo "Usage: $0 <username> <password>"
@@ -17,8 +24,8 @@ fi
 
 USERNAME=$1
 PASSWORD=$2
-USERS_FILE="./users.txt"
-WORKSPACES_DIR="../../workspaces"
+USERS_FILE="$PROJECT_ROOT/services/auth/users.txt"
+WORKSPACES_DIR="$PROJECT_ROOT/workspaces"
 
 echo "========================================="
 echo "Creating user: $USERNAME"
@@ -78,7 +85,7 @@ EOF
 git add README.md
 git commit -m "Initial commit"
 
-cd - > /dev/null
+cd "$PROJECT_ROOT" > /dev/null
 
 echo "✓ Initialized git repository"
 
@@ -97,7 +104,7 @@ echo "✓ Created MinIO bucket: user-workspaces/$USERNAME"
 # Create user's docker-compose override (for VS Code Server instance)
 VSCODE_PORT=$((8080 + $(wc -l < "$USERS_FILE")))
 
-cat > "../../docker-compose.$USERNAME.yml" << EOF
+cat > "$PROJECT_ROOT/docker-compose.$USERNAME.yml" << EOF
 version: '3.8'
 
 services:

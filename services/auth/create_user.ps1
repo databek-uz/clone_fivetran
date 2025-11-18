@@ -12,13 +12,20 @@ param(
   [string]$Password
 )
 
+# Detect script directory and project root
+$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
+$PROJECT_ROOT = (Get-Item "$SCRIPT_DIR\..\..\").FullName
+
+# Change to project root directory
+Set-Location $PROJECT_ROOT
+
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host "Creating user: $Username" -ForegroundColor Cyan
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 
-$USERS_FILE = ".\users.txt"
-$WORKSPACES_DIR = "..\..\workspaces"
+$USERS_FILE = Join-Path $PROJECT_ROOT "services\auth\users.txt"
+$WORKSPACES_DIR = Join-Path $PROJECT_ROOT "workspaces"
 
 # Check if user already exists
 if (Test-Path $USERS_FILE) {
@@ -89,7 +96,7 @@ $readmeContent | Out-File -FilePath "README.md" -Encoding UTF8
 git add README.md
 git commit -m "Initial commit"
 
-Set-Location -
+Set-Location $PROJECT_ROOT
 
 Write-Host "✓ Initialized git repository" -ForegroundColor Green
 
@@ -142,7 +149,8 @@ networks:
     external: true
 "@
 
-$composeContent | Out-File -FilePath "..\..\docker-compose.${Username}.yml" -Encoding UTF8
+$composeFilePath = Join-Path $PROJECT_ROOT "docker-compose.${Username}.yml"
+$composeContent | Out-File -FilePath $composeFilePath -Encoding UTF8
 Write-Host "✓ Created docker-compose override for VS Code Server" -ForegroundColor Green
 
 Write-Host ""

@@ -296,6 +296,26 @@ rm -rf data/ workspaces/ .airflow_initialized
 **To reset everything:**
 Delete the marker file and volumes as shown in "Remove all data" section above.
 
+### ⚙️ Performance Tuning
+
+**Airflow Worker Count** - Control how many tasks run in parallel:
+
+Edit `.env` file:
+```env
+# Options: 1 (light), 2 (balanced), 3 (heavy)
+AIRFLOW_WORKER_COUNT=1
+```
+
+**Recommendations:**
+- 💻 **Development / 8GB RAM**: `AIRFLOW_WORKER_COUNT=1` (uses ~4GB total)
+- 🖥️ **Production / 16GB RAM**: `AIRFLOW_WORKER_COUNT=2` (uses ~6GB total)
+- 🚀 **Heavy Load / 32GB RAM**: `AIRFLOW_WORKER_COUNT=3` (uses ~8GB total)
+
+**Impact:**
+- More workers = More parallel tasks but higher RAM usage
+- Each worker uses ~1.5-2GB RAM
+- Scripts automatically start only the number of workers you specify
+
 ---
 
 ## 🎯 First Steps

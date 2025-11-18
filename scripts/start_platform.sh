@@ -107,8 +107,20 @@ echo ""
 
 # Start Airflow services
 echo "Starting Airflow services..."
-docker-compose up -d airflow-webserver airflow-scheduler airflow-worker-1 airflow-worker-2 airflow-worker-3 airflow-flower
-echo "✓ Airflow services started"
+
+# Load worker count from .env (default: 1)
+WORKER_COUNT=$(grep "^AIRFLOW_WORKER_COUNT=" .env 2>/dev/null | cut -d'=' -f2 || echo "1")
+WORKER_COUNT=${WORKER_COUNT:-1}
+
+# Build worker list dynamically
+WORKERS=""
+for i in $(seq 1 $WORKER_COUNT); do
+    WORKERS="$WORKERS airflow-worker-$i"
+done
+
+echo "Configuring $WORKER_COUNT Airflow worker(s)..."
+docker-compose up -d airflow-webserver airflow-scheduler $WORKERS airflow-flower
+echo "✓ Airflow services started (workers: $WORKER_COUNT)"
 echo ""
 
 # Start monitoring services

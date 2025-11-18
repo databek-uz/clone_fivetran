@@ -176,8 +176,26 @@ Write-Host ""
 
 # Start Airflow services
 Write-Host "Starting Airflow services..." -ForegroundColor Yellow
-docker-compose up -d airflow-webserver airflow-scheduler airflow-worker-1 airflow-worker-2 airflow-worker-3 airflow-flower
-Write-Host "✓ Airflow services started" -ForegroundColor Green
+
+# Load worker count from .env (default: 1)
+$workerCount = 1
+if (Test-Path ".env") {
+    $envContent = Get-Content ".env" | Where-Object { $_ -match "^AIRFLOW_WORKER_COUNT=" }
+    if ($envContent) {
+        $workerCount = [int]($envContent -replace "AIRFLOW_WORKER_COUNT=", "")
+    }
+}
+
+# Build worker list dynamically
+$workers = @()
+for ($i = 1; $i -le $workerCount; $i++) {
+    $workers += "airflow-worker-$i"
+}
+
+Write-Host "Configuring $workerCount Airflow worker(s)..." -ForegroundColor Gray
+$workerList = $workers -join " "
+Invoke-Expression "docker-compose up -d airflow-webserver airflow-scheduler $workerList airflow-flower"
+Write-Host "✓ Airflow services started (workers: $workerCount)" -ForegroundColor Green
 Write-Host ""
 
 # Start monitoring services

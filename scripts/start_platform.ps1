@@ -167,10 +167,8 @@ if (-not (Test-Path ".airflow_initialized")) {
     Write-Host "✓ Airflow database initialized" -ForegroundColor Green
 }
 else {
-    Write-Host "Airflow database already initialized - skipping..." -ForegroundColor Gray
-    Write-Host "Running database upgrade to apply any new migrations..." -ForegroundColor Yellow
-    docker-compose run --rm airflow-webserver airflow db upgrade 2>&1 | Out-Null
-    Write-Host "✓ Airflow database ready" -ForegroundColor Green
+    Write-Host "✓ Airflow database already initialized - skipping upgrade" -ForegroundColor Green
+    Write-Host "  (To force upgrade, run: docker-compose run --rm airflow-webserver airflow db upgrade)" -ForegroundColor Gray
 }
 Write-Host ""
 

@@ -98,10 +98,8 @@ if [ ! -f ".airflow_initialized" ]; then
     touch .airflow_initialized
     echo "✓ Airflow database initialized"
 else
-    echo "Airflow database already initialized - skipping..."
-    echo "Running database upgrade to apply any new migrations..."
-    docker-compose run --rm airflow-webserver airflow db upgrade || true
-    echo "✓ Airflow database ready"
+    echo "✓ Airflow database already initialized - skipping upgrade"
+    echo "  (To force upgrade, run: docker-compose run --rm airflow-webserver airflow db upgrade)"
 fi
 echo ""
 

@@ -16,8 +16,14 @@ echo "========================================="
 echo "PipeZone - Virtual Environment Setup"
 echo "========================================="
 
+# Remove incomplete venv if exists
+if [ -d "$VENV_PATH" ] && [ ! -f "$VENV_PATH/bin/activate" ]; then
+    echo "Removing incomplete virtual environment..."
+    rm -rf "$VENV_PATH"
+fi
+
 # Create virtual environment if it doesn't exist
-if [ ! -d "$VENV_PATH" ]; then
+if [ ! -f "$VENV_PATH/bin/activate" ]; then
     echo "Creating virtual environment at $VENV_PATH..."
     python3.11 -m venv $VENV_PATH
     echo "✓ Virtual environment created"

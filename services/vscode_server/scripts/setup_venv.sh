@@ -38,6 +38,10 @@ source $VENV_PATH/bin/activate
 echo "Upgrading pip, setuptools, and wheel..."
 pip install --quiet --upgrade pip setuptools wheel pip-tools
 
+# Install essential packages for Jupyter and notebooks
+echo "Installing essential packages (jupyter, ipykernel)..."
+pip install --quiet jupyter jupyterlab ipykernel ipywidgets 2>/dev/null || echo "⚠ Some packages failed to install"
+
 # Check if requirements.txt exists in workspace
 if [ -f "$REQUIREMENTS_FILE" ]; then
     echo "Found existing requirements.txt, installing packages..."

@@ -67,7 +67,12 @@ EOF
 fi
 
 # Set up kernel for Jupyter
-python -m ipykernel install --user --name pipezone --display-name "PipeZone (Python 3.11)"
+if python -m ipykernel --version &>/dev/null; then
+    python -m ipykernel install --user --name pipezone --display-name "PipeZone (Python 3.11)" 2>/dev/null || true
+    echo "✓ Jupyter kernel configured"
+else
+    echo "⚠ ipykernel not available, skipping kernel setup"
+fi
 
 # Display startup information
 echo "========================================="

@@ -64,8 +64,8 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 \
 # Install Python Base Libraries
 # =============================================================================
 COPY config/requirements_base.txt /tmp/requirements_base.txt
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel pip-tools \
-    && pip install --no-cache-dir -r /tmp/requirements_base.txt \
+RUN pip install --no-cache-dir --break-system-packages --upgrade pip setuptools wheel pip-tools \
+    && pip install --no-cache-dir --break-system-packages -r /tmp/requirements_base.txt \
     && rm /tmp/requirements_base.txt
 
 # =============================================================================

@@ -96,13 +96,15 @@ COPY home_page /home/coder/home_page
 # Copy Setup Scripts
 # =============================================================================
 COPY scripts /home/coder/scripts
-RUN chmod +x /home/coder/scripts/*.sh
+RUN find /home/coder/scripts -type f -name "*.sh" -exec sed -i 's/\r$//' {} \; \
+    && chmod +x /home/coder/scripts/*.sh
 
 # =============================================================================
 # Configure Bash Environment
 # =============================================================================
 COPY config/bashrc_additions.sh /tmp/bashrc_additions.sh
-RUN cat /tmp/bashrc_additions.sh >> /home/coder/.bashrc \
+RUN sed -i 's/\r$//' /tmp/bashrc_additions.sh \
+    && cat /tmp/bashrc_additions.sh >> /home/coder/.bashrc \
     && rm /tmp/bashrc_additions.sh
 
 # =============================================================================
@@ -155,7 +157,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # =============================================================================
 COPY scripts/entrypoint.sh /home/coder/entrypoint.sh
 USER root
-RUN chmod +x /home/coder/entrypoint.sh
+RUN sed -i 's/\r$//' /home/coder/entrypoint.sh \
+    && chmod +x /home/coder/entrypoint.sh
 USER coder
 
 ENTRYPOINT ["/home/coder/entrypoint.sh"]

@@ -31,13 +31,29 @@ echo "========================================="
 echo "Creating user: $USERNAME"
 echo "========================================="
 
+# Create users file directory if it doesn't exist
+mkdir -p "$(dirname "$USERS_FILE")"
+touch "$USERS_FILE"
+
 # Check if user already exists
 if grep -q "^$USERNAME:" "$USERS_FILE" 2>/dev/null; then
     echo "Error: User $USERNAME already exists"
     exit 1
 fi
 
+# Check for bcrypt and install if needed
+echo "Checking dependencies..."
+if ! python3 -c "import bcrypt" 2>/dev/null; then
+    echo "Installing bcrypt..."
+    pip3 install bcrypt --quiet || {
+        echo "Error: Failed to install bcrypt. Please install it manually:"
+        echo "  pip3 install bcrypt"
+        exit 1
+    }
+fi
+
 # Generate password hash using Python
+echo "Generating password hash..."
 PASSWORD_HASH=$(python3 -c "import bcrypt; print(bcrypt.hashpw('$PASSWORD'.encode(), bcrypt.gensalt()).decode())")
 
 # Create workspace directory
@@ -52,8 +68,10 @@ echo "✓ Created workspace: $USER_WORKSPACE"
 # Initialize git repository in workspace
 cd "$USER_WORKSPACE"
 git init
-git config user.name "$USERNAME"
-git config user.email "${USERNAME}@pipezone.local"
+
+# Configure git for this repository (local config, no global changes needed)
+git config user.name "$USERNAME" 2>/dev/null || true
+git config user.email "${USERNAME}@pipezone.local" 2>/dev/null || true
 
 # Create README
 cat > README.md << EOF
@@ -92,14 +110,6 @@ echo "✓ Initialized git repository"
 # Add user to users file
 echo "$USERNAME:$PASSWORD_HASH:$USER_WORKSPACE" >> "$USERS_FILE"
 echo "✓ Added user to users.txt"
-
-# Create MinIO user bucket
-echo "Creating MinIO user bucket..."
-docker-compose exec -T minio mc alias set minio http://localhost:9000 \
-    $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD 2>/dev/null || true
-
-docker-compose exec -T minio mc mb --ignore-existing minio/user-workspaces/$USERNAME 2>/dev/null || true
-echo "✓ Created MinIO bucket: user-workspaces/$USERNAME"
 
 # Create user's docker-compose override (for VS Code Server instance)
 VSCODE_PORT=$((8080 + $(wc -l < "$USERS_FILE")))
@@ -148,9 +158,9 @@ echo ""
 echo "Username: $USERNAME"
 echo "Workspace: $USER_WORKSPACE"
 echo "VS Code Port: $VSCODE_PORT"
-echo "MinIO Bucket: user-workspaces/$USERNAME"
 echo ""
 echo "To start VS Code Server for this user:"
+echo "  cd $PROJECT_ROOT"
 echo "  docker-compose -f docker-compose.yml -f docker-compose.$USERNAME.yml up -d"
 echo ""
 echo "Access URL: http://localhost:$VSCODE_PORT"

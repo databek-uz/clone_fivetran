@@ -27,11 +27,33 @@ Write-Host ""
 $USERS_FILE = Join-Path $PROJECT_ROOT "services\auth\users.txt"
 $WORKSPACES_DIR = Join-Path $PROJECT_ROOT "workspaces"
 
+# Create users file directory if it doesn't exist
+$usersDir = Split-Path -Parent $USERS_FILE
+if (-not (Test-Path $usersDir)) {
+  New-Item -ItemType Directory -Path $usersDir -Force | Out-Null
+}
+if (-not (Test-Path $USERS_FILE)) {
+  New-Item -ItemType File -Path $USERS_FILE -Force | Out-Null
+}
+
 # Check if user already exists
 if (Test-Path $USERS_FILE) {
   $existingUsers = Get-Content $USERS_FILE
   if ($existingUsers | Select-String -Pattern "^${Username}:") {
     Write-Host "Error: User $Username already exists" -ForegroundColor Red
+    exit 1
+  }
+}
+
+# Check for bcrypt and install if needed
+Write-Host "Checking dependencies..." -ForegroundColor Yellow
+$bcryptCheck = python -c "import bcrypt" 2>&1
+if ($LASTEXITCODE -ne 0) {
+  Write-Host "Installing bcrypt..." -ForegroundColor Yellow
+  pip install bcrypt --quiet
+  if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Failed to install bcrypt" -ForegroundColor Red
+    Write-Host "Please install it manually: pip install bcrypt" -ForegroundColor Yellow
     exit 1
   }
 }
@@ -61,8 +83,10 @@ Write-Host "✓ Created workspace: $USER_WORKSPACE" -ForegroundColor Green
 Set-Location $USER_WORKSPACE
 
 git init
-git config user.name $Username
-git config user.email "${Username}@pipezone.local"
+
+# Configure git for this repository (local config, no global changes needed)
+git config user.name $Username 2>&1 | Out-Null
+git config user.email "${Username}@pipezone.local" 2>&1 | Out-Null
 
 # Create README
 $readmeContent = @"
@@ -104,12 +128,6 @@ Write-Host "✓ Initialized git repository" -ForegroundColor Green
 $userEntry = "${Username}:${passwordHash}:${USER_WORKSPACE}"
 Add-Content -Path $USERS_FILE -Value $userEntry
 Write-Host "✓ Added user to users.txt" -ForegroundColor Green
-
-# Create MinIO user bucket
-Write-Host "Creating MinIO user bucket..." -ForegroundColor Yellow
-docker-compose exec -T minio mc alias set minio http://localhost:9000 $env:MINIO_ROOT_USER $env:MINIO_ROOT_PASSWORD 2>&1 | Out-Null
-docker-compose exec -T minio mc mb --ignore-existing minio/user-workspaces/$Username 2>&1 | Out-Null
-Write-Host "✓ Created MinIO bucket: user-workspaces/$Username" -ForegroundColor Green
 
 # Create user's docker-compose override (for VS Code Server instance)
 $userCount = (Get-Content $USERS_FILE).Count
@@ -161,9 +179,9 @@ Write-Host ""
 Write-Host "Username: $Username" -ForegroundColor Cyan
 Write-Host "Workspace: $USER_WORKSPACE" -ForegroundColor Cyan
 Write-Host "VS Code Port: $VSCODE_PORT" -ForegroundColor Cyan
-Write-Host "MinIO Bucket: user-workspaces/$Username" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "To start VS Code Server for this user:" -ForegroundColor Yellow
+Write-Host "  cd $PROJECT_ROOT" -ForegroundColor White
 Write-Host "  docker-compose -f docker-compose.yml -f docker-compose.${Username}.yml up -d" -ForegroundColor White
 Write-Host ""
 Write-Host "Access URL: http://localhost:$VSCODE_PORT" -ForegroundColor Cyan

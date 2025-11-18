@@ -72,7 +72,13 @@ RUN pip install --no-cache-dir --break-system-packages --upgrade pip setuptools 
 # Install VS Code Extensions
 # =============================================================================
 COPY config/extensions.txt /tmp/extensions.txt
-RUN cat /tmp/extensions.txt | xargs -I {} code-server --install-extension {} \
+RUN sed -i 's/\r$//' /tmp/extensions.txt \
+    && while IFS= read -r ext || [ -n "$ext" ]; do \
+        if [ -n "$ext" ]; then \
+            echo "Installing extension: $ext"; \
+            code-server --install-extension "$ext" || echo "Failed to install $ext"; \
+        fi \
+    done < /tmp/extensions.txt \
     && rm /tmp/extensions.txt
 
 # =============================================================================

@@ -37,7 +37,7 @@ fi
 
 # Create necessary directories
 echo "Creating directories..."
-mkdir -p user_workspaces
+mkdir -p workspaces
 mkdir -p shared/{notebooks/{templates,examples,production},libraries,data,reviews}
 mkdir -p data/minio
 mkdir -p data/postgres

@@ -18,7 +18,7 @@ Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host ""
 
 $USERS_FILE = ".\users.txt"
-$WORKSPACES_DIR = "..\..\user_workspaces"
+$WORKSPACES_DIR = "..\..\workspaces"
 
 # Check if user already exists
 if (Test-Path $USERS_FILE) {
@@ -125,7 +125,7 @@ services:
       - AIRFLOW_URL=http://airflow-webserver:8080
       - SPARK_MASTER_URL=`${SPARK_MASTER_URL}
     volumes:
-      - ./user_workspaces/${Username}:/home/coder/workspace
+      - ./workspaces/${Username}:/home/coder/workspace
       - ./shared:/home/coder/shared:ro
       - vscode_extensions_${Username}:/home/coder/.local
     ports:

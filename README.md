@@ -260,7 +260,7 @@ pipezone/
 │   ├── data/                  # Shared datasets
 │   └── reviews/               # Code reviews
 │
-├── user_workspaces/           # Per-user workspaces
+├── workspaces/           # Per-user workspaces
 │   ├── user1/
 │   └── user2/
 │

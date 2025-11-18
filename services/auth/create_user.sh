@@ -18,7 +18,7 @@ fi
 USERNAME=$1
 PASSWORD=$2
 USERS_FILE="./users.txt"
-WORKSPACES_DIR="../../user_workspaces"
+WORKSPACES_DIR="../../workspaces"
 
 echo "========================================="
 echo "Creating user: $USERNAME"
@@ -114,7 +114,7 @@ services:
       - AIRFLOW_URL=http://airflow-webserver:8080
       - SPARK_MASTER_URL=\${SPARK_MASTER_URL}
     volumes:
-      - ./user_workspaces/$USERNAME:/home/coder/workspace
+      - ./workspaces/$USERNAME:/home/coder/workspace
       - ./shared:/home/coder/shared:ro
       - vscode_extensions_$USERNAME:/home/coder/.local
     ports:

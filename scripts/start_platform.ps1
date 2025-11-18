@@ -37,7 +37,7 @@ if (-not (Test-Path ".env")) {
 # Create necessary directories
 Write-Host "Creating directories..." -ForegroundColor Yellow
 $directories = @(
-    "user_workspaces",
+    "workspaces",
     "shared\notebooks\templates",
     "shared\notebooks\examples",
     "shared\notebooks\production",
